@@ -46,6 +46,13 @@ public enum AntNexo {
         try await Engine.shared.unreadCount()
     }
 
+    /// For the sample app's scripted checks: runs JS in the open sheet's page. Not part of the API.
+    @_spi(Testing)
+    public static func evaluateInSheet(_ js: String) async throws -> Any? {
+        guard let web = Engine.shared.current?.webView else { return nil }
+        return try await web.evaluateJavaScript(js)
+    }
+
     #if canImport(UIKit)
     /// Shows the sheet over `from` (by default the top-most controller of the key window).
     /// - Parameter screenshot: attach a screenshot of the app as it is now; the person sees it and can remove it
@@ -69,6 +76,7 @@ public enum AntNexo {
         let feedback = FeedbackController(host: p.host, workspace: p.workspace, page: p.page, state: p.state,
                                           seenStore: engine.seenStore, dataStore: DataStore.store(for: p.host),
                                           opener: opener, signIn: signIn, onEvent: { engine.onEvent?($0) })
+        engine.current = feedback
         let vc = SheetViewController(feedback: feedback) {
             signIn.finish()
             engine.sheetClosed()
@@ -104,6 +112,7 @@ public enum AntNexo {
         let feedback = FeedbackController(host: p.host, workspace: p.workspace, page: p.page, state: p.state,
                                           seenStore: engine.seenStore, dataStore: DataStore.store(for: p.host),
                                           opener: BrowserOpener(), signIn: signIn, onEvent: { engine.onEvent?($0) })
+        engine.current = feedback
         let vc = SheetViewController(feedback: feedback) {
             signIn.finish()
             engine.sheetClosed()

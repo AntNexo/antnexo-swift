@@ -33,6 +33,8 @@ final class Engine {
     var fetchDates: (BoardHost) async throws -> [Date] = { try await ChangelogClient(host: $0).publishedDates() }
     var clearData: (BoardHost) async -> Void = { await DataStore.clear(for: $0) }
     var now: () -> Date = { Date() }
+    /// The open sheet's controller.
+    weak var current: FeedbackController?
     /// Debug builds stop on a misuse (show before configure); tests turn it off.
     var assertsOnMisuse = true
     /// A sheet is up (or being prepared): one at a time.

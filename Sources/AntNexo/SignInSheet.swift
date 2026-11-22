@@ -37,6 +37,7 @@ final class SystemSignIn: NSObject, SignInPresenter, ASWebAuthenticationPresenta
         s.presentationContextProvider = self
         session = s
         if !s.start() {
+            log.error("the sign-in sheet didn't start")
             session = nil
             onClosed()
         }

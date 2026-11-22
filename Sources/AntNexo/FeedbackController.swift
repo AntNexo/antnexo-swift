@@ -122,8 +122,15 @@ final class FeedbackController: NSObject, WKNavigationDelegate, WKUIDelegate {
     }
 
     func receive(_ body: Any, isMainFrame: Bool, scheme: String, host h: String, port: Int) {
-        guard accept(isMainFrame: isMainFrame, scheme: scheme, host: h, port: port),
-              let m = parsePageMessage(body, host: host) else { return }
+        guard accept(isMainFrame: isMainFrame, scheme: scheme, host: h, port: port) else {
+            log.notice("ignored a message from another frame or origin")
+            return
+        }
+        guard let m = parsePageMessage(body, host: host) else {
+            let type = ((body as? [String: Any])?["type"] as? String).map { String($0.prefix(32)) } ?? "?"
+            log.notice("ignored an invalid page message: \(type, privacy: .public)")
+            return
+        }
         handle(m)
     }
 
