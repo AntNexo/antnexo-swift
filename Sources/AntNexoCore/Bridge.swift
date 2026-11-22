@@ -1,7 +1,7 @@
 import Foundation
 
-/// What the page reports as the app's platform. `reactNative` is set by the React Native wrapper.
-public enum BridgePlatform: String, Sendable { case ios, macos, reactNative = "react-native" }
+/// What the page reports as the app's platform. `reactNative` and `flutter` are set by the wrappers.
+public enum BridgePlatform: String, Sendable { case ios, macos, reactNative = "react-native", flutter }
 
 /// The app's context the page sends with each post. Every field is optional; nil fields are left out.
 public struct AppContext: Sendable, Equatable, Encodable {
