@@ -14,8 +14,6 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     CODE_SIGN_IDENTITY: "-"
-    GENERATE_INFOPLIST_FILE: YES
-    INFOPLIST_KEY_CFBundleDisplayName: AntNexo Sample
 targets:
   Sample-iOS:
     type: application
@@ -28,6 +26,10 @@ targets:
       properties:
         CFBundleDisplayName: AntNexo Sample
         UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         # only for trying the sample against a local AntNexo (http://<slug>.localhost:8090)
         NSAppTransportSecurity:
           NSExceptionDomains:
@@ -36,10 +38,7 @@ targets:
               NSExceptionAllowsInsecureHTTPLoads: true
     settings:
       base:
-        GENERATE_INFOPLIST_FILE: NO
         PRODUCT_BUNDLE_IDENTIFIER: com.antnexo.sample.ios
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         TARGETED_DEVICE_FAMILY: "1,2"
   Sample-macOS:
     type: application
@@ -47,6 +46,15 @@ targets:
     sources: [Sources]
     dependencies:
       - package: AntNexo
+    info:
+      path: Info-macOS.plist
+      properties:
+        CFBundleDisplayName: AntNexo Sample
+        NSAppTransportSecurity:
+          NSExceptionDomains:
+            localhost:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
     entitlements:
       path: Sample-macOS.entitlements
       properties:

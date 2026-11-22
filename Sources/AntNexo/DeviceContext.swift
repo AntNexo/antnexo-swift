@@ -52,9 +52,9 @@ private func deviceModel() -> String? {
     var size = 0
     sysctlbyname("hw.model", nil, &size, nil, 0)
     guard size > 0 else { return nil }
-    var buf = [CChar](repeating: 0, count: size)
+    var buf = [UInt8](repeating: 0, count: size)
     sysctlbyname("hw.model", &buf, &size, nil, 0)
-    return String(cString: buf)
+    return String(decoding: buf.prefix { $0 != 0 }, as: UTF8.self)
     #else
     if let sim = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return sim }
     var u = utsname()

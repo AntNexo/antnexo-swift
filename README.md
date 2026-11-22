@@ -88,9 +88,11 @@ The provider is called each time the sheet opens; if it fails, returns nil or ta
 opens anyway and the person can sign in our way. **Never put the identify secret in the app.** The token goes to the
 page through the bridge, never in a URL or a log.
 
-On every account switch (sign out, another user), call:
+On every account switch (sign out, another user), make the provider stop returning the old person's token and clear
+the sheet's session:
 
 ```swift
+AntNexo.identify(nil)          // or a provider for the new account
 await AntNexo.logout()
 ```
 
@@ -130,7 +132,8 @@ AntNexo.onEvent = { event in
 
 ## Privacy
 
-Nothing is collected before the sheet opens. With a post the SDK sends the app's name, version and build, the OS and
+Nothing personal is sent before the sheet opens: the only earlier request is the public changelog, when you call
+`unreadCount()` for a badge. With a post the SDK sends the app's name, version and build, the OS and
 its version, the device model (`iPhone16,2`), the locale and the SDK version — no device identifiers, no IDFA, no
 tracking. Your workspace shows them on the post in the admin; erasing a person removes them.
 
@@ -154,8 +157,8 @@ tracking. Your workspace shows them on the post in the admin; erasing a person r
 
 ## Sample app
 
-`Examples/Sample` (iOS and macOS): open `Sample.xcodeproj` and run. It opens our test workspace by default; pass
-`-host https://<slug>.antnexo.com -workspace <slug>` as launch arguments for yours. The project is generated with
+`Examples/Sample` (iOS and macOS): open `Sample.xcodeproj`, set your board in **Edit Scheme → Run → Arguments**
+(`-host https://<slug>.antnexo.com -workspace <slug>`) and run. The project is generated with
 [XcodeGen](https://github.com/yonaskolb/XcodeGen) from `project.yml`.
 
 ## Licence
