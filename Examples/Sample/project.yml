@@ -1,0 +1,65 @@
+name: Sample
+options:
+  bundleIdPrefix: com.antnexo.sample
+  deploymentTarget:
+    iOS: "15.0"
+    macOS: "12.0"
+packages:
+  AntNexo:
+    path: ../..
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+targets:
+  Sample-iOS:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    dependencies:
+      - package: AntNexo
+    info:
+      path: Info-iOS.plist
+      properties:
+        CFBundleDisplayName: AntNexo Sample
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        # only for trying the sample against a local AntNexo (http://<slug>.localhost:8090)
+        NSAppTransportSecurity:
+          NSExceptionDomains:
+            localhost:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.antnexo.sample.ios
+        TARGETED_DEVICE_FAMILY: "1,2"
+  Sample-macOS:
+    type: application
+    platform: macOS
+    sources: [Sources]
+    dependencies:
+      - package: AntNexo
+    info:
+      path: Info-macOS.plist
+      properties:
+        CFBundleDisplayName: AntNexo Sample
+        NSAppTransportSecurity:
+          NSExceptionDomains:
+            localhost:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+    entitlements:
+      path: Sample-macOS.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.antnexo.sample.macos
