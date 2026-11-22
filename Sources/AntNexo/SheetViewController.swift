@@ -47,7 +47,15 @@ final class SheetViewController: PlatformViewController {
 
     @objc func done() {
         #if canImport(UIKit)
-        (navigationController ?? self).dismiss(animated: true) { [weak self] in self?.didClose() }
+        let sheet = navigationController ?? self
+        // still sliding in: UIKit ignores a dismiss during the presentation, so close when it ends
+        if sheet.isBeingPresented, let t = sheet.transitionCoordinator {
+            t.animate(alongsideTransition: nil) { [weak self] _ in self?.done() }
+            return
+        }
+        // from the presenter: closes whatever is on top of the sheet too (a link in Safari), not only that
+        guard let presenter = sheet.presentingViewController else { return didClose() }
+        presenter.dismiss(animated: true) { [weak self] in self?.didClose() }
         #else
         if let w = view.window, let parent = w.sheetParent { parent.endSheet(w) } else { view.window?.close() }
         didClose()

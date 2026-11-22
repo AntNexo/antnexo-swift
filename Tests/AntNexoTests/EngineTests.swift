@@ -1,6 +1,6 @@
 #if canImport(WebKit)
 import XCTest
-@testable import AntNexo
+@_spi(Wrapper) @testable import AntNexo
 
 @MainActor
 final class EngineTests: XCTestCase {
@@ -57,6 +57,15 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(p.state.sdk, "9.9.9")
     }
 
+    func testSetWrapperFallsBackOnABlankVersion() {
+        let saved = Engine.shared.wrapper
+        defer { Engine.shared.wrapper = saved }
+        AntNexo.setWrapper(platform: .reactNative, sdk: "  ")
+        XCTAssertEqual(Engine.shared.wrapper?.sdk, SDK_VERSION)
+        AntNexo.setWrapper(platform: .reactNative, sdk: " 1.0.0 ")
+        XCTAssertEqual(Engine.shared.wrapper?.sdk, "1.0.0")
+    }
+
     func testDefaultPlatformAndSDK() async throws {
         let e = try make()
         let prepared = await e.prepare(tab: nil, screenshot: false)
@@ -67,9 +76,13 @@ final class EngineTests: XCTestCase {
 
     func testShowBeforeConfigureReturnsFalse() async throws {
         let shared = Engine.shared
+        let saved = (shared.configuration, shared.assertsOnMisuse)
         shared.clearConfiguration()
         shared.assertsOnMisuse = false
-        defer { shared.assertsOnMisuse = true }
+        defer {
+            shared.assertsOnMisuse = saved.1
+            if let c = saved.0 { try? shared.configure(host: URL(string: c.host.origin)!, workspace: c.workspace, options: c.options) }
+        }
         let shown = await AntNexo.show()
         XCTAssertFalse(shown)
         AntNexo.close() // nothing open: a no-op

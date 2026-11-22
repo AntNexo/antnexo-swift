@@ -42,6 +42,8 @@ final class Engine {
     var assertsOnMisuse = true
     /// A sheet is up (or being prepared): one at a time.
     private(set) var presenting = false
+    /// Bumped by close() and logout(): a sheet still being prepared then never appears.
+    var generation = 0
 
     func configure(host: URL, workspace: String, options: FeedbackOptions) throws {
         let h = try BoardHost(host)
@@ -105,6 +107,7 @@ final class Engine {
 
     func logout() async {
         guard let c = configuration else { return }
+        generation += 1
         // an open page keeps its session in memory: close it first
         currentSheet?.done()
         await clearData(c.host)

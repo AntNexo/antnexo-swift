@@ -1,6 +1,5 @@
 import Foundation
 
-/// The platform the page is told it runs on (`AntNexoApp.platform`).
 /// What the page reports as the app's platform. `reactNative` is set by the React Native wrapper.
 public enum BridgePlatform: String, Sendable { case ios, macos, reactNative = "react-native" }
 
