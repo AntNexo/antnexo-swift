@@ -1,7 +1,8 @@
 import Foundation
 
 /// The platform the page is told it runs on (`AntNexoApp.platform`).
-public enum BridgePlatform: String, Sendable { case ios, macos }
+/// What the page reports as the app's platform. `reactNative` is set by the React Native wrapper.
+public enum BridgePlatform: String, Sendable { case ios, macos, reactNative = "react-native" }
 
 /// The app's context the page sends with each post. Every field is optional; nil fields are left out.
 public struct AppContext: Sendable, Equatable, Encodable {
@@ -29,9 +30,12 @@ public struct NativeState: Sendable, Equatable {
     public var seen: String?
     /// The app's screen as a `data:image/jpeg;base64,…` URL, when the app asked for one.
     public var screenshot: String?
+    /// The SDK version the page reports: this package's, or a wrapper's (React Native).
+    public var sdk: String
 
     public init(platform: BridgePlatform, context: AppContext, identify: String? = nil, seen: String? = nil,
-                screenshot: String? = nil) {
+                screenshot: String? = nil, sdk: String = SDK_VERSION) {
+        self.sdk = sdk
         self.platform = platform
         self.context = context
         self.identify = identify
@@ -68,7 +72,7 @@ private struct Payload: Encodable {
 public func bridgeScript(_ s: NativeState, handler: String = "antnexo") -> String {
     let enc = JSONEncoder()
     enc.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-    let p = Payload(platform: s.platform.rawValue, sdk: SDK_VERSION, context: s.context, identify: s.identify,
+    let p = Payload(platform: s.platform.rawValue, sdk: s.sdk, context: s.context, identify: s.identify,
                     seen: s.seen, screenshot: s.screenshot)
     let json = (try? String(decoding: enc.encode(p), as: UTF8.self)) ?? "{}"
     let safe = json

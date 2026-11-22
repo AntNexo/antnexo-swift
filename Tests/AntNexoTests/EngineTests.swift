@@ -48,6 +48,33 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(q.state.screenshot, "data:image/jpeg;base64,AAAA")
     }
 
+    func testWrapper() async throws {
+        let e = try make()
+        e.wrapper = (.reactNative, "9.9.9")
+        let prepared = await e.prepare(tab: nil, screenshot: false)
+        let p = try XCTUnwrap(prepared)
+        XCTAssertEqual(p.state.platform, .reactNative)
+        XCTAssertEqual(p.state.sdk, "9.9.9")
+    }
+
+    func testDefaultPlatformAndSDK() async throws {
+        let e = try make()
+        let prepared = await e.prepare(tab: nil, screenshot: false)
+        let p = try XCTUnwrap(prepared)
+        XCTAssertEqual(p.state.platform, currentPlatform())
+        XCTAssertEqual(p.state.sdk, SDK_VERSION)
+    }
+
+    func testShowBeforeConfigureReturnsFalse() async throws {
+        let shared = Engine.shared
+        shared.clearConfiguration()
+        shared.assertsOnMisuse = false
+        defer { shared.assertsOnMisuse = true }
+        let shown = await AntNexo.show()
+        XCTAssertFalse(shown)
+        AntNexo.close() // nothing open: a no-op
+    }
+
     func testOneSheetAtATime() async throws {
         let e = try make()
         let first = await e.prepare(tab: nil, screenshot: false)
