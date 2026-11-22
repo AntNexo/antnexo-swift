@@ -33,9 +33,9 @@ final class ConfigTests: XCTestCase {
 
     func testAppPageURL() throws {
         let h = try BoardHost(URL(string: "https://splynx.antnexo.com")!)
-        XCTAssertEqual(appPageURL(h, workspace: "splynx", Options()).absoluteString,
+        XCTAssertEqual(appPageURL(h, workspace: "splynx", FeedbackOptions()).absoluteString,
                        "https://splynx.antnexo.com/app?workspace=splynx")
-        var o = Options()
+        var o = FeedbackOptions()
         o.tab = .roadmap
         o.tabs = [.new, .roadmap]
         o.theme = .dark
@@ -44,7 +44,7 @@ final class ConfigTests: XCTestCase {
         o.language = "de"
         XCTAssertEqual(appPageURL(h, workspace: "splynx", o).absoluteString,
                        "https://splynx.antnexo.com/app?workspace=splynx&tab=roadmap&tabs=new,roadmap&theme=dark&prompts=off&whats-new=off&lang=de")
-        o = Options()
+        o = FeedbackOptions()
         o.prompts = true
         o.boards = ["ideas", "bugs"]
         o.color = "#ff0000"

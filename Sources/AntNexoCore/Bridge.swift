@@ -1,7 +1,7 @@
 import Foundation
 
 /// The platform the page is told it runs on (`AntNexoApp.platform`).
-public enum Platform: String, Sendable { case ios, macos }
+public enum BridgePlatform: String, Sendable { case ios, macos }
 
 /// The app's context the page sends with each post. Every field is optional; nil fields are left out.
 public struct AppContext: Sendable, Equatable, Encodable {
@@ -21,7 +21,7 @@ public struct AppContext: Sendable, Equatable, Encodable {
 
 /// What the app hands the page when the sheet opens.
 public struct NativeState: Sendable, Equatable {
-    public var platform: Platform
+    public var platform: BridgePlatform
     public var context: AppContext
     /// A fresh identify token from the app's backend; never logged, never in a URL.
     public var identify: String?
@@ -30,7 +30,7 @@ public struct NativeState: Sendable, Equatable {
     /// The app's screen as a `data:image/jpeg;base64,…` URL, when the app asked for one.
     public var screenshot: String?
 
-    public init(platform: Platform, context: AppContext, identify: String? = nil, seen: String? = nil,
+    public init(platform: BridgePlatform, context: AppContext, identify: String? = nil, seen: String? = nil,
                 screenshot: String? = nil) {
         self.platform = platform
         self.context = context

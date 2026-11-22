@@ -3,6 +3,8 @@ import Foundation
 public enum AntNexoError: Error, Equatable, Sendable {
     /// The host isn't a bare http(s) origin like `https://acme.antnexo.com`.
     case invalidHost
+    /// The workspace slug is empty.
+    case invalidWorkspace
     /// `AntNexo.configure` wasn't called.
     case notConfigured
     /// The API answered with this HTTP status.
@@ -12,13 +14,13 @@ public enum AntNexoError: Error, Equatable, Sendable {
 }
 
 /// The widget's color scheme: `auto` follows the system.
-public enum Theme: String, Sendable { case light, dark, auto }
+public enum FeedbackTheme: String, Sendable { case light, dark, auto }
 
 /// The widget's tabs (`TabKey` in the widget).
-public enum Tab: String, Sendable, CaseIterable { case new, popular, roadmap, changelog }
+public enum FeedbackTab: String, Sendable, CaseIterable { case new, popular, roadmap, changelog }
 
 /// How the widget shows What's new: a badge on its tab, a popup with the newest entry, or not at all.
-public enum WhatsNew: String, Sendable { case badge, popup, off }
+public enum WhatsNewMode: String, Sendable { case badge, popup, off }
 
 /// The board host the app opens: the workspace's `<slug>.antnexo.com` (recommended) or its custom domain.
 public struct BoardHost: Sendable, Equatable {
@@ -52,24 +54,24 @@ public struct BoardHost: Sendable, Equatable {
 }
 
 /// What the sheet shows; nil leaves the widget's own default.
-public struct Options: Sendable, Equatable {
+public struct FeedbackOptions: Sendable, Equatable {
     /// The tab it opens on.
-    public var tab: Tab?
+    public var tab: FeedbackTab?
     /// Which tabs, in that order.
-    public var tabs: [Tab]?
+    public var tabs: [FeedbackTab]?
     /// Which boards (their slugs).
     public var boards: [String]?
-    public var theme: Theme?
+    public var theme: FeedbackTheme?
     /// The accent color, like `#4f46e5`.
     public var color: String?
     /// false: never ask the team's prompt questions.
     public var prompts: Bool?
-    public var whatsNew: WhatsNew?
+    public var whatsNew: WhatsNewMode?
     /// The widget's language; by default it follows the app's.
     public var language: String?
 
-    public init(tab: Tab? = nil, tabs: [Tab]? = nil, boards: [String]? = nil, theme: Theme? = nil, color: String? = nil,
-                prompts: Bool? = nil, whatsNew: WhatsNew? = nil, language: String? = nil) {
+    public init(tab: FeedbackTab? = nil, tabs: [FeedbackTab]? = nil, boards: [String]? = nil, theme: FeedbackTheme? = nil, color: String? = nil,
+                prompts: Bool? = nil, whatsNew: WhatsNewMode? = nil, language: String? = nil) {
         self.tab = tab
         self.tabs = tabs
         self.boards = boards
@@ -88,7 +90,7 @@ private let queryValue: CharacterSet = {
 }()
 
 /// The app page: `<host>/app?workspace=<slug>` and the set options. Nothing personal goes in it.
-public func appPageURL(_ host: BoardHost, workspace: String, _ o: Options) -> URL {
+public func appPageURL(_ host: BoardHost, workspace: String, _ o: FeedbackOptions) -> URL {
     var q: [(String, [String])] = [("workspace", [workspace])]
     if let t = o.tab { q.append(("tab", [t.rawValue])) }
     if let t = o.tabs, !t.isEmpty { q.append(("tabs", t.map(\.rawValue))) }

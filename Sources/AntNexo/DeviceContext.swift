@@ -6,7 +6,7 @@ import UIKit
 #endif
 
 /// The platform this build runs on.
-func currentPlatform() -> Platform {
+func currentPlatform() -> BridgePlatform {
     #if os(macOS)
     return .macos
     #else

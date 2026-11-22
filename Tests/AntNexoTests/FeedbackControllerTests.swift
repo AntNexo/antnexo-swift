@@ -36,7 +36,7 @@ final class FeedbackControllerTests: XCTestCase {
     var events: [AntNexoEvent] = []
     var js: [String] = []
 
-    var page: URL { appPageURL(host, workspace: "splynx", Options()) }
+    var page: URL { appPageURL(host, workspace: "splynx", FeedbackOptions()) }
     let state = NativeState(platform: .macos, context: AppContext(app: "Acme"), identify: "jwt.token.x")
 
     func make() -> FeedbackController {
