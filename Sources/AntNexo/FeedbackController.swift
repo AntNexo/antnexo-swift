@@ -109,6 +109,20 @@ final class FeedbackController: NSObject, WKNavigationDelegate, WKUIDelegate {
         webView.load(URLRequest(url: page))
     }
 
+    /// Stops the page and cuts the bridge: called when the sheet closes.
+    func tearDown() {
+        webView.stopLoading()
+        webView.navigationDelegate = nil
+        webView.uiDelegate = nil
+        let uc = webView.configuration.userContentController
+        uc.removeAllScriptMessageHandlers()
+        uc.removeAllUserScripts()
+        // an empty page ends the widget's timers and polls even if something still holds the WebView
+        webView.loadHTMLString("", baseURL: nil)
+        onLoadFailed = nil
+        onLoaded = nil
+    }
+
     /// Loads the page again after a failure.
     func retry() {
         gate = NavigationGate(page: page)

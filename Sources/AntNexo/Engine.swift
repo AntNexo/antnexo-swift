@@ -33,8 +33,9 @@ final class Engine {
     var fetchDates: (BoardHost) async throws -> [Date] = { try await ChangelogClient(host: $0).publishedDates() }
     var clearData: (BoardHost) async -> Void = { await DataStore.clear(for: $0) }
     var now: () -> Date = { Date() }
-    /// The open sheet's controller.
-    weak var current: FeedbackController?
+    /// The open sheet and its controller.
+    private(set) weak var current: FeedbackController?
+    private(set) weak var currentSheet: SheetViewController?
     /// Debug builds stop on a misuse (show before configure); tests turn it off.
     var assertsOnMisuse = true
     /// A sheet is up (or being prepared): one at a time.
@@ -67,8 +68,15 @@ final class Engine {
                         state: state)
     }
 
+    func opened(_ feedback: FeedbackController, _ sheet: SheetViewController) {
+        current = feedback
+        currentSheet = sheet
+    }
+
     func sheetClosed() {
         presenting = false
+        current = nil
+        currentSheet = nil
     }
 
     /// The app's token, or nil when it gives none, fails, or takes longer than identifyTimeout (the sheet opens
@@ -109,14 +117,18 @@ func firstOf(timeout: TimeInterval, _ f: @escaping @Sendable () async throws -> 
     }
     return await withCheckedContinuation { cont in
         let once = Once(cont)
+        let timer = Task.detached {
+            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+            once.resume(nil)
+        }
         let work = Task.detached {
             let v = try? await f()
             once.resume(v ?? nil)
+            timer.cancel()
         }
         Task.detached {
-            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+            _ = await timer.result
             work.cancel()
-            once.resume(nil)
         }
     }
 }

@@ -33,6 +33,8 @@ final class SheetViewController: PlatformViewController {
     func didClose() {
         guard !closed else { return }
         closed = true
+        // the page stops here: no polls, no messages to the app after .closed
+        feedback.tearDown()
         onClose()
     }
 

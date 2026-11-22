@@ -6,8 +6,10 @@ import AntNexoCore
 
 /// Where the sheet's web data lives (the widget session, What's new state of the page).
 ///
-/// iOS 17+ / macOS 14+: a store of its own per board host, so `logout()` clears exactly that. Older systems: the
-/// default store, and `logout()` removes the records of the host's site (for `<slug>.antnexo.com`: `antnexo.com`).
+/// iOS 17+ / macOS 14+: a store of its own per board host, so `logout()` clears exactly that. Older systems have no
+/// such store: a `<slug>.antnexo.com` board uses the default store and `logout()` removes the `antnexo.com` records
+/// (nothing of the app's); a custom-domain board uses a non-persistent store, because its site (`acme.com`) may hold
+/// the app's own web data, which logout must not touch — the person signs in again on each opening there.
 enum DataStore {
     @available(iOS 17, macOS 14, *)
     static func identifier(for host: BoardHost) -> UUID {
@@ -19,12 +21,20 @@ enum DataStore {
                            b[14], b[15]))
     }
 
+    /// Before iOS 17 / macOS 14: whether this host gets a non-persistent store.
+    static func legacyEphemeral(_ host: BoardHost) -> Bool { !host.isAntNexoSubdomain }
+
+    /// Before iOS 17 / macOS 14: which default-store records (by display name) logout removes.
+    static func legacyRecordsToClear(_ displayNames: [String], for host: BoardHost) -> [String] {
+        host.isAntNexoSubdomain ? displayNames.filter { $0 == "antnexo.com" } : []
+    }
+
     @MainActor
     static func store(for host: BoardHost) -> WKWebsiteDataStore {
         if #available(iOS 17, macOS 14, *) {
             return WKWebsiteDataStore(forIdentifier: identifier(for: host))
         }
-        return .default()
+        return legacyEphemeral(host) ? .nonPersistent() : .default()
     }
 
     @MainActor
@@ -36,8 +46,8 @@ enum DataStore {
         }
         let store = WKWebsiteDataStore.default()
         let records = await store.dataRecords(ofTypes: types)
-        let mine = records.filter { r in host.host == r.displayName || host.host.hasSuffix("." + r.displayName) }
-        await store.removeData(ofTypes: types, for: mine)
+        let names = Set(legacyRecordsToClear(records.map(\.displayName), for: host))
+        await store.removeData(ofTypes: types, for: records.filter { names.contains($0.displayName) })
     }
 }
 #endif

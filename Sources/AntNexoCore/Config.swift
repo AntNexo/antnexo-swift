@@ -32,7 +32,8 @@ public struct BoardHost: Sendable, Equatable {
     public init(_ url: URL) throws {
         guard let c = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let scheme = c.scheme?.lowercased(), scheme == "https" || scheme == "http",
-              let host = c.host?.lowercased(), !host.isEmpty,
+              // the ASCII (punycode) form, as WebKit reports origins; URLComponents.host would decode it
+              let host = asciiHost(url), !host.isEmpty,
               c.user == nil, c.password == nil,
               c.path.isEmpty || c.path == "/", c.query == nil, c.fragment == nil
         else { throw AntNexoError.invalidHost }
@@ -40,6 +41,9 @@ public struct BoardHost: Sendable, Equatable {
         self.host = host
         self.port = c.port.flatMap { $0 == Self.defaultPort(scheme) ? nil : $0 }
     }
+
+    /// A workspace's own `<slug>.antnexo.com` host (not a custom domain).
+    public var isAntNexoSubdomain: Bool { scheme == "https" && host.hasSuffix(".antnexo.com") }
 
     public var origin: String { "\(scheme)://\(host)" + (port.map { ":\($0)" } ?? "") }
 
@@ -51,6 +55,12 @@ public struct BoardHost: Sendable, Equatable {
     }
 
     static func defaultPort(_ scheme: String) -> Int { scheme == "https" ? 443 : 80 }
+}
+
+/// A URL's host in ASCII form (`xn--bcher-kva.example`), lowercased; nil when it has none or isn't ASCII.
+func asciiHost(_ url: URL) -> String? {
+    guard let h = url.host?.lowercased(), h.unicodeScalars.allSatisfy(\.isASCII) else { return nil }
+    return h
 }
 
 /// What the sheet shows; nil leaves the widget's own default.
@@ -85,7 +95,8 @@ public struct FeedbackOptions: Sendable, Equatable {
 
 private let queryValue: CharacterSet = {
     var s = CharacterSet.urlQueryAllowed
-    s.remove(charactersIn: "&=+#?,")
+    // ' too: WebKit encodes it in a query (WHATWG), and the first load must be exactly this URL
+    s.remove(charactersIn: "&=+#?,'")
     return s
 }()
 

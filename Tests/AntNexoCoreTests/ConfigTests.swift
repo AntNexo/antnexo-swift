@@ -56,3 +56,31 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(SDK_VERSION, "1.0.0")
     }
 }
+
+final class ConfigReviewTests: XCTestCase {
+    /// WebKit encodes ' in a query (WHATWG); the gate compares exact URLs, so the SDK must encode it too.
+    func testQuoteIsEncoded() throws {
+        let h = try BoardHost(URL(string: "https://splynx.antnexo.com")!)
+        XCTAssertEqual(appPageURL(h, workspace: "splynx", FeedbackOptions(boards: ["a'b"])).absoluteString,
+                       "https://splynx.antnexo.com/app?workspace=splynx&boards=a%27b")
+    }
+
+    /// WebKit reports origins in ASCII: the host is kept in its punycode form, however it was given.
+    func testIDNHostIsASCII() throws {
+        let h = try BoardHost(URL(string: "https://xn--bcher-kva.example")!)
+        XCTAssertEqual(h.host, "xn--bcher-kva.example")
+        XCTAssertTrue(h.matches(scheme: "https", host: "xn--bcher-kva.example", port: 0))
+        let u = URL(string: "https://xn--bcher-kva.example/api/v1/public/oauth/google/start")!
+        XCTAssertEqual(parsePageMessage(["type": "auth", "url": u.absoluteString], host: h), .auth(u))
+        #if canImport(Darwin)
+        XCTAssertEqual(try BoardHost(URL(string: "https://bücher.example")!).host, "xn--bcher-kva.example")
+        #endif
+    }
+
+    func testIsAntNexoHost() throws {
+        XCTAssertTrue(try BoardHost(URL(string: "https://splynx.antnexo.com")!).isAntNexoSubdomain)
+        XCTAssertFalse(try BoardHost(URL(string: "https://feedback.acme.com")!).isAntNexoSubdomain)
+        XCTAssertFalse(try BoardHost(URL(string: "https://evilantnexo.com")!).isAntNexoSubdomain)
+        XCTAssertFalse(try BoardHost(URL(string: "http://acme.localhost:8090")!).isAntNexoSubdomain)
+    }
+}
