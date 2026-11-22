@@ -28,6 +28,8 @@ final class Engine {
     var onEvent: ((AntNexoEvent) -> Void)?
     var seenStore: SeenStore = UserDefaultsSeenStore()
     var identifyTimeout: TimeInterval = 10
+    /// Set by a wrapper (React Native): the platform and SDK version the page reports instead of this package's.
+    var wrapper: (platform: BridgePlatform, sdk: String)?
     var context: () -> AppContext = { deviceContext() }
     var capture: () -> String? = { captureScreenshot() }
     var fetchDates: (BoardHost) async throws -> [Date] = { try await ChangelogClient(host: $0).publishedDates() }
@@ -40,6 +42,8 @@ final class Engine {
     var assertsOnMisuse = true
     /// A sheet is up (or being prepared): one at a time.
     private(set) var presenting = false
+    /// Bumped by close() and logout(): a sheet still being prepared then never appears.
+    var generation = 0
 
     func configure(host: URL, workspace: String, options: FeedbackOptions) throws {
         let h = try BoardHost(host)
@@ -62,8 +66,9 @@ final class Engine {
         let token = await identifyToken()
         var options = c.options
         if let tab { options.tab = tab }
-        let state = NativeState(platform: currentPlatform(), context: context(), identify: token,
-                                seen: seenStore.get(workspace: c.workspace), screenshot: shot)
+        let state = NativeState(platform: wrapper?.platform ?? currentPlatform(), context: context(), identify: token,
+                                seen: seenStore.get(workspace: c.workspace), screenshot: shot,
+                                sdk: wrapper?.sdk ?? SDK_VERSION)
         return Prepared(host: c.host, workspace: c.workspace, page: appPageURL(c.host, workspace: c.workspace, options),
                         state: state)
     }
@@ -102,6 +107,7 @@ final class Engine {
 
     func logout() async {
         guard let c = configuration else { return }
+        generation += 1
         // an open page keeps its session in memory: close it first
         currentSheet?.done()
         await clearData(c.host)

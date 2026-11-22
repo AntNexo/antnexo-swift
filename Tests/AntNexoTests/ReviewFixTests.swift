@@ -25,6 +25,27 @@ final class ReviewFixTests: XCTestCase {
         e.clearConfiguration()
     }
 
+    /// close() while the sheet is still being prepared (a slow token): it never appears.
+    func testCloseWhilePreparing() async throws {
+        Engine.shared.tokenProvider = {
+            try await Task.sleep(nanoseconds: 200_000_000)
+            return "jwt"
+        }
+        defer { Engine.shared.tokenProvider = nil }
+        var closed = 0
+        async let shown = AntNexo.show()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        AntNexo.close()
+        let presented = await shown
+        XCTAssertFalse(presented)
+        XCTAssertNil(Engine.shared.currentSheet)
+        XCTAssertFalse(Engine.shared.presenting)
+        await AntNexo.present(from: nil, tab: nil, screenshot: false, onClose: { closed += 1 })
+        XCTAssertNotNil(Engine.shared.currentSheet, "the next show() works")
+        AntNexo.close()
+        XCTAssertEqual(closed, 1)
+    }
+
     /// The window only ordered out (minimised parent, Cmd-H) isn't a close.
     func testDisappearingIsNotClosing() async throws {
         var closed = 0

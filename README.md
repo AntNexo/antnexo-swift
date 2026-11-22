@@ -22,7 +22,7 @@ Swift Package Manager: in Xcode, **File → Add Package Dependencies…** and pa
 `https://github.com/AntNexo/antnexo-swift`. Or in `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/AntNexo/antnexo-swift", from: "1.0.0")
+.package(url: "https://github.com/AntNexo/antnexo-swift", from: "1.1.0")
 ```
 
 and add `AntNexo` to your target's dependencies.
@@ -56,7 +56,11 @@ struct SettingsView: View {
 ```swift
 await AntNexo.show()                       // from the top-most view controller / the key window
 await AntNexo.show(from: self, tab: .roadmap)
+AntNexo.close()                            // closes it from code, as Done does
 ```
+
+`show` returns whether a sheet was presented (`false` before `configure`, while one is already up, or with nothing to
+present from).
 
 Tabs: `.new`, `.popular`, `.roadmap`, `.changelog`. More options at `configure`:
 
@@ -154,6 +158,8 @@ tracking. Your workspace shows them on the post in the admin; erasing a person r
 - Internationalised host names work in either form; the SDK compares origins in their ASCII (`xn--…`) form.
 - If the page can't load (offline), the sheet says so and offers Try again.
 - A renamed workspace slug changes the host: ship the new one in an update.
+- Wrappers of this package (the React Native SDK) set the platform and SDK version the page reports through
+  `@_spi(Wrapper) AntNexo.setWrapper(platform:sdk:)`; apps don't call it.
 
 ## Sample app
 

@@ -46,6 +46,19 @@ public enum AntNexo {
         try await Engine.shared.unreadCount()
     }
 
+    /// Closes the open sheet, as if the person pressed Done (a `.closed` event follows). Nothing open: a no-op.
+    public static func close() {
+        Engine.shared.generation += 1
+        Engine.shared.currentSheet?.done()
+    }
+
+    /// For wrappers of this package (React Native): the platform and SDK version the page reports. Not for apps.
+    @_spi(Wrapper)
+    public static func setWrapper(platform: BridgePlatform, sdk: String) {
+        let v = sdk.trimmingCharacters(in: .whitespacesAndNewlines)
+        Engine.shared.wrapper = (platform, v.isEmpty ? SDK_VERSION : v)
+    }
+
     #if DEBUG
     /// For the sample app's scripted checks: runs JS in the open sheet's page. Debug builds only; not part of the API.
     @_spi(Testing)
@@ -72,15 +85,25 @@ public enum AntNexo {
     /// Shows the sheet over `from` (by default the top-most controller of the key window).
     /// - Parameter screenshot: attach a screenshot of the app as it is now; the person sees it and can remove it
     ///   before sending. Off by default: the screen can hold private data.
-    public static func show(from: UIViewController? = nil, tab: FeedbackTab? = nil, screenshot: Bool = false) async {
-        await present(from: from, tab: tab, screenshot: screenshot, onClose: nil)
+    /// - Returns: whether a sheet was presented (false before `configure`, while one is up, or with nothing to
+    ///   present from).
+    @discardableResult
+    public static func show(from: UIViewController? = nil, tab: FeedbackTab? = nil, screenshot: Bool = false) async -> Bool {
+        await present(from: from, tab: tab, screenshot: screenshot, onClose: nil) != nil
     }
 
     /// The sheet it opened, nil when it didn't.
     @discardableResult
     static func present(from: UIViewController?, tab: FeedbackTab?, screenshot: Bool, onClose: (() -> Void)?) async -> SheetViewController? {
         let engine = Engine.shared
+        let generation = engine.generation
         guard let p = await engine.prepare(tab: tab, screenshot: screenshot) else {
+            onClose?()
+            return nil
+        }
+        // close() or logout() while it was being prepared (it may carry the previous person's token)
+        guard engine.generation == generation else {
+            engine.sheetClosed()
             onClose?()
             return nil
         }
@@ -129,15 +152,24 @@ public enum AntNexo {
     /// Shows the sheet on `from` (by default the key window; a window of its own when there is none).
     /// - Parameter screenshot: attach a screenshot of the app as it is now; the person sees it and can remove it
     ///   before sending. Off by default: the screen can hold private data.
-    public static func show(from: NSWindow? = nil, tab: FeedbackTab? = nil, screenshot: Bool = false) async {
-        await present(from: from, tab: tab, screenshot: screenshot, onClose: nil)
+    /// - Returns: whether a sheet was presented (false before `configure` or while one is up).
+    @discardableResult
+    public static func show(from: NSWindow? = nil, tab: FeedbackTab? = nil, screenshot: Bool = false) async -> Bool {
+        await present(from: from, tab: tab, screenshot: screenshot, onClose: nil) != nil
     }
 
     /// The sheet it opened, nil when it didn't.
     @discardableResult
     static func present(from: NSWindow?, tab: FeedbackTab?, screenshot: Bool, onClose: (() -> Void)?) async -> SheetViewController? {
         let engine = Engine.shared
+        let generation = engine.generation
         guard let p = await engine.prepare(tab: tab, screenshot: screenshot) else {
+            onClose?()
+            return nil
+        }
+        // close() or logout() while it was being prepared (it may carry the previous person's token)
+        guard engine.generation == generation else {
+            engine.sheetClosed()
             onClose?()
             return nil
         }

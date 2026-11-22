@@ -14,7 +14,7 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(s.hasPrefix("window.AntNexoApp="), s)
         XCTAssertTrue(s.contains(#""v":1"#))
         XCTAssertTrue(s.contains(#""platform":"ios""#))
-        XCTAssertTrue(s.contains(#""sdk":"1.0.0""#))
+        XCTAssertTrue(s.contains(#""sdk":"\#(SDK_VERSION)""#))
         XCTAssertTrue(s.contains(#""identify":null"#))
         XCTAssertTrue(s.contains(#""seen":null"#))
         XCTAssertTrue(s.contains(#""screenshot":null"#))
@@ -22,6 +22,16 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(s.contains("window.webkit.messageHandlers.antnexo.postMessage(m)"))
         XCTAssertTrue(s.contains("Object.freeze"))
         XCTAssertTrue(bridgeScript(state(identify: "eyJ.a.b")).contains(#""identify":"eyJ.a.b""#))
+    }
+
+    func testWrapperPlatformAndSDK() {
+        var st = state()
+        st.platform = .reactNative
+        st.sdk = "9.9.9"
+        let s = bridgeScript(st)
+        XCTAssertTrue(s.contains(#""platform":"react-native""#), s)
+        XCTAssertTrue(s.contains(#""sdk":"9.9.9""#), s)
+        XCTAssertEqual(state().sdk, SDK_VERSION)
     }
 
     func testScriptEscapes() {

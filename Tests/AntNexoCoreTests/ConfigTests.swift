@@ -53,7 +53,7 @@ final class ConfigTests: XCTestCase {
     }
 
     func testVersion() {
-        XCTAssertEqual(SDK_VERSION, "1.0.0")
+        XCTAssertEqual(SDK_VERSION, "1.1.0")
     }
 }
 
