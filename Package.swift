@@ -13,5 +13,6 @@ let package = Package(
         // The Apple layer: WebKit sheet, sign-in, screenshot, public API.
         .target(name: "AntNexo", dependencies: ["AntNexoCore"]),
         .testTarget(name: "AntNexoCoreTests", dependencies: ["AntNexoCore"]),
+        .testTarget(name: "AntNexoTests", dependencies: ["AntNexo"], swiftSettings: [.define("TESTING")]),
     ]
 )
