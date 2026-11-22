@@ -61,6 +61,13 @@ public enum AntNexo {
     }
     #endif
 
+    /// A sheet that never appeared: frees it and lets the next show() through, without a .closed event.
+    static func discard(_ sheet: SheetViewController, onClose: (() -> Void)?) {
+        sheet.discard()
+        Engine.shared.sheetClosed()
+        onClose?()
+    }
+
     #if canImport(UIKit)
     /// Shows the sheet over `from` (by default the top-most controller of the key window).
     /// - Parameter screenshot: attach a screenshot of the app as it is now; the person sees it and can remove it
@@ -69,14 +76,19 @@ public enum AntNexo {
         await present(from: from, tab: tab, screenshot: screenshot, onClose: nil)
     }
 
-    static func present(from: UIViewController?, tab: FeedbackTab?, screenshot: Bool, onClose: (() -> Void)?) async {
+    /// The sheet it opened, nil when it didn't.
+    @discardableResult
+    static func present(from: UIViewController?, tab: FeedbackTab?, screenshot: Bool, onClose: (() -> Void)?) async -> SheetViewController? {
         let engine = Engine.shared
-        guard let p = await engine.prepare(tab: tab, screenshot: screenshot) else { return onClose?() ?? () }
+        guard let p = await engine.prepare(tab: tab, screenshot: screenshot) else {
+            onClose?()
+            return nil
+        }
         guard let presenter = from ?? topController() else {
             log.error("AntNexo.show(): no view controller to present from")
             engine.sheetClosed()
             onClose?()
-            return
+            return nil
         }
         let opener = SafariOpener(presenter: nil)
         weak var sheet: SheetViewController?
@@ -101,8 +113,11 @@ public enum AntNexo {
         // the sheet never appears, and the next show() must not be refused as "one already up".
         if nav.presentingViewController == nil {
             log.error("AntNexo.show(): the sheet couldn't be presented")
-            vc.didClose()
+            signIn.finish()
+            discard(vc, onClose: onClose)
+            return nil
         }
+        return vc
     }
 
     private static func topController() -> UIViewController? {
@@ -118,9 +133,14 @@ public enum AntNexo {
         await present(from: from, tab: tab, screenshot: screenshot, onClose: nil)
     }
 
-    static func present(from: NSWindow?, tab: FeedbackTab?, screenshot: Bool, onClose: (() -> Void)?) async {
+    /// The sheet it opened, nil when it didn't.
+    @discardableResult
+    static func present(from: NSWindow?, tab: FeedbackTab?, screenshot: Bool, onClose: (() -> Void)?) async -> SheetViewController? {
         let engine = Engine.shared
-        guard let p = await engine.prepare(tab: tab, screenshot: screenshot) else { return onClose?() ?? () }
+        guard let p = await engine.prepare(tab: tab, screenshot: screenshot) else {
+            onClose?()
+            return nil
+        }
         weak var window: NSWindow?
         let signIn = SystemSignIn(anchor: { window })
         let feedback = FeedbackController(host: p.host, workspace: p.workspace, page: p.page, state: p.state,
@@ -137,6 +157,7 @@ public enum AntNexo {
         w.setContentSize(NSSize(width: 480, height: 720))
         w.isReleasedWhenClosed = false
         window = w
+        vc.watch(w)
         if let parent = from ?? NSApp.keyWindow ?? NSApp.mainWindow {
             parent.beginSheet(w, completionHandler: nil)
         } else {
@@ -144,6 +165,7 @@ public enum AntNexo {
             w.center()
             w.makeKeyAndOrderFront(nil)
         }
+        return vc
     }
     #endif
 }

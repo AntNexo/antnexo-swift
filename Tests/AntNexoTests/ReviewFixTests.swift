@@ -5,14 +5,68 @@ import WebKit
 
 @MainActor
 final class ReviewFixTests: XCTestCase {
-    /// Closing the sheet frees the controller and its WebView, and the page can't reach the app any more.
-    func testClosedSheetIsFreed() async throws {
+    #if os(macOS)
+    private var saved: (Bool, () -> String?, () -> AppContext)?
+
+    override func setUp() async throws {
         let e = Engine.shared
+        saved = (e.assertsOnMisuse, e.capture, e.context)
         e.assertsOnMisuse = false
         e.capture = { nil }
         e.context = { AppContext(app: "Test") }
         e.tokenProvider = nil
         try e.configure(host: URL(string: "https://splynx.antnexo.com")!, workspace: "splynx", options: FeedbackOptions())
+    }
+
+    override func tearDown() async throws {
+        let e = Engine.shared
+        e.currentSheet?.done()
+        if let (a, c, x) = saved { e.assertsOnMisuse = a; e.capture = c; e.context = x }
+        e.clearConfiguration()
+    }
+
+    /// The window only ordered out (minimised parent, Cmd-H) isn't a close.
+    func testDisappearingIsNotClosing() async throws {
+        var closed = 0
+        await AntNexo.present(from: nil, tab: nil, screenshot: false, onClose: { closed += 1 })
+        let sheet = try XCTUnwrap(Engine.shared.currentSheet)
+        sheet.viewDidDisappear()
+        XCTAssertEqual(closed, 0)
+        XCTAssertTrue(Engine.shared.presenting)
+        sheet.view.window?.close()
+        XCTAssertEqual(closed, 1)
+        XCTAssertFalse(Engine.shared.presenting)
+    }
+
+    /// Logging out while the sheet is open closes it: the open page mustn't keep the previous person's session.
+    func testLogoutClosesTheOpenSheet() async throws {
+        var closed = 0
+        await AntNexo.present(from: nil, tab: nil, screenshot: false, onClose: { closed += 1 })
+        Engine.shared.clearData = { _ in }
+        await Engine.shared.logout()
+        XCTAssertEqual(closed, 1)
+        XCTAssertNil(Engine.shared.currentSheet)
+    }
+
+    /// A sheet that never appeared is discarded without a .closed event.
+    func testDiscardSendsNoClosed() async throws {
+        var events: [AntNexoEvent] = []
+        Engine.shared.onEvent = { events.append($0) }
+        defer { Engine.shared.onEvent = nil }
+        var closed = 0
+        await AntNexo.present(from: nil, tab: nil, screenshot: false, onClose: { closed += 1 })
+        let sheet = try XCTUnwrap(Engine.shared.currentSheet)
+        AntNexo.discard(sheet, onClose: { closed += 1 })
+        XCTAssertEqual(closed, 1)
+        XCTAssertFalse(events.contains(.closed))
+        XCTAssertFalse(Engine.shared.presenting)
+        sheet.done()
+        XCTAssertEqual(closed, 1)
+    }
+
+    /// Closing the sheet frees the controller and its WebView, and the page can't reach the app any more.
+    func testClosedSheetIsFreed() async throws {
+        let e = Engine.shared
         var closed = 0
         await AntNexo.present(from: nil, tab: nil, screenshot: false, onClose: { closed += 1 })
         weak var fc = e.current
@@ -26,6 +80,7 @@ final class ReviewFixTests: XCTestCase {
         XCTAssertNil(fc)
         XCTAssertNil(web)
     }
+    #endif
 
     func testTearDownCutsTheBridge() throws {
         let host = try BoardHost(URL(string: "https://splynx.antnexo.com")!)

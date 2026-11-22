@@ -23,7 +23,7 @@ final class SystemSignIn: NSObject, SignInPresenter, ASWebAuthenticationPresenta
 
     func start(_ url: URL, onClosed: @escaping () -> Void) {
         finish()
-        var current: ASWebAuthenticationSession?
+        weak var current: ASWebAuthenticationSession?  // weak: the session holds this closure
         let s = ASWebAuthenticationSession(url: url, callbackURLScheme: nil) { [weak self] _, _ in
             Task { @MainActor in
                 // finish() drops the session first: closing it ourselves isn't the person closing it

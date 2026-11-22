@@ -61,15 +61,24 @@ final class EngineTests: XCTestCase {
 
     struct Boom: Error {}
 
+    final class Flag: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value = false
+        var isSet: Bool { lock.lock(); defer { lock.unlock() }; return value }
+        func set() { lock.lock(); value = true; lock.unlock() }
+    }
+
     func testTokenProviderFailures() async throws {
         let e = try make()
+        let release = Flag()
         let providers: [@Sendable () async throws -> String?] = [
             { throw Boom() },
             { "" },
             { nil },
             { try await Task.sleep(nanoseconds: 5_000_000_000); return "late" },
-            { while true { usleep(10_000) } },  // ignores cancellation
+            { while !release.isSet { usleep(10_000) }; return "too late" },  // ignores cancellation
         ]
+        defer { release.set() }  // let the blocked thread go when the test ends
         for provider in providers {
             e.tokenProvider = provider
             let started = Date()

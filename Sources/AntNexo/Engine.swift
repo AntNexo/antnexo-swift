@@ -68,6 +68,11 @@ final class Engine {
                         state: state)
     }
 
+    /// For tests.
+    func clearConfiguration() {
+        configuration = nil
+    }
+
     func opened(_ feedback: FeedbackController, _ sheet: SheetViewController) {
         current = feedback
         currentSheet = sheet
@@ -97,6 +102,8 @@ final class Engine {
 
     func logout() async {
         guard let c = configuration else { return }
+        // an open page keeps its session in memory: close it first
+        currentSheet?.done()
         await clearData(c.host)
     }
 }

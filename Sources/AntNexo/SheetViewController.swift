@@ -29,6 +29,13 @@ final class SheetViewController: PlatformViewController {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
+    /// A sheet that never appeared: stops the page without reporting a close.
+    func discard() {
+        guard !closed else { return }
+        closed = true
+        feedback.tearDown()
+    }
+
     /// Called once, however the sheet went away (Done, a swipe down, the window closing).
     func didClose() {
         guard !closed else { return }
@@ -73,7 +80,9 @@ final class SheetViewController: PlatformViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        if isBeingDismissed || navigationController?.isBeingDismissed == true { didClose() }
+        // dismissed itself, or went away with a controller under it the app dismissed (then nothing presents it)
+        if isBeingDismissed || navigationController?.isBeingDismissed == true
+            || (navigationController ?? self).presentingViewController == nil { didClose() }
     }
 
     private func showFailure() {
@@ -129,9 +138,18 @@ final class SheetViewController: PlatformViewController {
         feedback.load()
     }
 
-    override func viewDidDisappear() {
-        super.viewDidDisappear()
-        didClose()
+    nonisolated(unsafe) private var closeObserver: NSObjectProtocol?
+
+    /// The sheet ends with Done (Esc) or, as a window of its own, with its close button; being ordered out (a
+    /// minimised parent, the app hidden) isn't a close.
+    func watch(_ window: NSWindow) {
+        closeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: window, queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.didClose() } }
+    }
+
+    deinit {
+        if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
     }
 
     private func showFailure() {
