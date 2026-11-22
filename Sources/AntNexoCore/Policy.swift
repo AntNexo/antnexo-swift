@@ -59,7 +59,7 @@ private let oauthPath = try! NSRegularExpression(pattern: "^/api/v1/public/oauth
 
 /// Whether u is the board's own `/api/v1/public/oauth/<provider>/start` (the path compared as sent, still encoded).
 func isOAuthStart(_ u: URL, host: BoardHost) -> Bool {
-    guard let c = URLComponents(url: u, resolvingAgainstBaseURL: false), let scheme = c.scheme, let h = c.host,
+    guard let c = URLComponents(url: u, resolvingAgainstBaseURL: false), let scheme = c.scheme, let h = asciiHost(u),
           c.user == nil, c.password == nil,
           host.matches(scheme: scheme, host: h, port: c.port ?? 0) else { return false }
     let path = c.percentEncodedPath
