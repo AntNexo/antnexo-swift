@@ -1,0 +1,57 @@
+name: Sample
+options:
+  bundleIdPrefix: com.antnexo.sample
+  deploymentTarget:
+    iOS: "15.0"
+    macOS: "12.0"
+packages:
+  AntNexo:
+    path: ../..
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: AntNexo Sample
+targets:
+  Sample-iOS:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    dependencies:
+      - package: AntNexo
+    info:
+      path: Info-iOS.plist
+      properties:
+        CFBundleDisplayName: AntNexo Sample
+        UILaunchScreen: {}
+        # only for trying the sample against a local AntNexo (http://<slug>.localhost:8090)
+        NSAppTransportSecurity:
+          NSExceptionDomains:
+            localhost:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_BUNDLE_IDENTIFIER: com.antnexo.sample.ios
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+  Sample-macOS:
+    type: application
+    platform: macOS
+    sources: [Sources]
+    dependencies:
+      - package: AntNexo
+    entitlements:
+      path: Sample-macOS.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.antnexo.sample.macos
