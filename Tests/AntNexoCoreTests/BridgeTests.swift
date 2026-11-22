@@ -32,6 +32,8 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(s.contains(#""platform":"react-native""#), s)
         XCTAssertTrue(s.contains(#""sdk":"9.9.9""#), s)
         XCTAssertEqual(state().sdk, SDK_VERSION)
+        st.platform = .flutter
+        XCTAssertTrue(bridgeScript(st).contains(#""platform":"flutter""#))
     }
 
     func testScriptEscapes() {

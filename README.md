@@ -22,7 +22,7 @@ Swift Package Manager: in Xcode, **File → Add Package Dependencies…** and pa
 `https://github.com/AntNexo/antnexo-swift`. Or in `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/AntNexo/antnexo-swift", from: "1.1.0")
+.package(url: "https://github.com/AntNexo/antnexo-swift", from: "1.2.0")
 ```
 
 and add `AntNexo` to your target's dependencies.
